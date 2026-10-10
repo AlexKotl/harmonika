@@ -1,0 +1,191 @@
+:root {
+  color-scheme: dark;
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#app {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  background: #241712;
+  color: #f1e6d2;
+  overflow: hidden;
+  -webkit-user-select: none;
+  user-select: none;
+  touch-action: none;
+}
+
+.app {
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+  width: 100vw;
+}
+
+/* ---------- Toolbar ---------- */
+
+.toolbar {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  padding: 0.5rem 1rem;
+  background: linear-gradient(180deg, #3a2719, #2c1c11);
+  border-bottom: 2px solid #1a1009;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+  flex-wrap: wrap;
+}
+
+.brand {
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  font-size: 0.95rem;
+  color: #e8c98a;
+  white-space: nowrap;
+}
+
+.control {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8rem;
+  color: #d9c7ad;
+}
+
+.control-label {
+  white-space: nowrap;
+}
+
+.tuning-select {
+  background: #171009;
+  color: #f1e6d2;
+  border: 1px solid #5a4530;
+  border-radius: 6px;
+  padding: 0.3rem 0.5rem;
+  font-size: 0.85rem;
+}
+
+.tremolo-slider {
+  width: 110px;
+  accent-color: #c99a4a;
+}
+
+.bellows-control {
+  margin-left: auto;
+}
+
+.bellows-button {
+  background: #171009;
+  color: #d9c7ad;
+  border: 1px solid #5a4530;
+  padding: 0.35rem 0.9rem;
+  font-size: 0.85rem;
+  cursor: pointer;
+  border-radius: 6px;
+}
+
+.bellows-button + .bellows-button {
+  margin-left: 0.4rem;
+}
+
+.bellows-button.active {
+  background: #c99a4a;
+  color: #2c1c11;
+  border-color: #e8c98a;
+  font-weight: 600;
+}
+
+.bellows-hint {
+  margin-left: 0.6rem;
+  font-size: 0.72rem;
+  color: #8a7a63;
+  white-space: nowrap;
+}
+
+/* ---------- Fingerboard ---------- */
+
+.stage {
+  flex: 1 1 auto;
+  min-height: 0;
+  background: radial-gradient(ellipse at 50% 0%, #3c2a1a 0%, #211409 70%);
+}
+
+.fingerboard {
+  height: 100%;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  gap: var(--column-gap);
+  padding: var(--board-padding);
+  overflow: hidden;
+}
+
+.column {
+  display: flex;
+  flex-direction: column;
+  gap: var(--key-gap);
+  margin-top: calc(var(--row-offset) * (var(--key-size) + var(--key-gap)));
+}
+
+/* ---------- Key ---------- */
+
+.key {
+  width: var(--key-size);
+  height: var(--key-size);
+  border-radius: 50%;
+  border: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(circle at 35% 30%, #fbf3dd, #e7d8ad 70%, #cdb779 100%);
+  color: #30230f;
+  box-shadow:
+    0 4px 0 #8a6f3c,
+    0 6px 10px rgba(0, 0, 0, 0.45);
+  cursor: pointer;
+  font-family: inherit;
+  padding: 0;
+  transition: transform 0.04s ease-out, box-shadow 0.04s ease-out;
+  touch-action: none;
+}
+
+.key.chromatic {
+  background: radial-gradient(circle at 35% 30%, #d8c9a3, #b9a062 70%, #96834a 100%);
+}
+
+.key.pressed {
+  transform: translateY(4px);
+  box-shadow:
+    0 1px 0 #8a6f3c,
+    0 2px 4px rgba(0, 0, 0, 0.5);
+  background: radial-gradient(circle at 35% 30%, #f2e4bd, #d8c488 70%, #b89f5e 100%);
+}
+
+.key-active {
+  font-size: calc(var(--key-size) * 0.26);
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+.key-other {
+  font-size: calc(var(--key-size) * 0.17);
+  color: #6b5a3c;
+  line-height: 1.1;
+}
+
+.key.gleichton .key-active::after {
+  content: ' \25CF';
+  font-size: 0.5em;
+  vertical-align: super;
+  color: #8a5a2a;
+}

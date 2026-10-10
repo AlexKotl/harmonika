@@ -1,0 +1,1 @@
+{"root":["./src/app.vue","./src/main.ts","./src/vite-env.d.ts","./src/audio/reedengine.ts","./src/components/fingerboard.vue","./src/components/harmonicabutton.vue","./src/data/layout.ts","./src/data/notes.ts","./src/data/tunings.ts"],"version":"5.9.3"}
