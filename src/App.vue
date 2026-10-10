@@ -2,7 +2,10 @@
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import Fingerboard from './components/Fingerboard.vue'
 import { DEFAULT_TUNING_ID, TUNINGS, getTuning } from './data/tunings'
+import type { Button } from './data/layout'
 import { reedEngine } from './audio/ReedEngine'
+import { applyKeyboardLayout, buttonForCode } from './input/keyboardMap'
+import { holdButton, releaseButton, releaseSourcesWithPrefix } from './input/holds'
 
 type Bellows = 'push' | 'pull'
 
@@ -31,12 +34,12 @@ function writeStored(key: string, value: string): void {
 const tuningId = ref(readStored(STORAGE_KEYS.tuning) ?? DEFAULT_TUNING_ID)
 const tuning = computed(() => getTuning(tuningId.value))
 
-// `baseBellows` is the sticky direction set by the on-screen toggle or the
-// Space key. Holding Shift temporarily forces Zug (pull), like squeezing the
-// bellows open without changing the sticky setting underneath.
+// `baseBellows` is the sticky direction set by the on-screen toggle. Holding
+// Space or Shift temporarily forces Zug (pull) without changing that setting.
 const baseBellows = ref<Bellows>((readStored(STORAGE_KEYS.bellows) as Bellows | null) ?? 'push')
 const shiftHeld = ref(false)
-const bellows = computed<Bellows>(() => (shiftHeld.value ? 'pull' : baseBellows.value))
+const spaceHeld = ref(false)
+const bellows = computed<Bellows>(() => (shiftHeld.value || spaceHeld.value ? 'pull' : baseBellows.value))
 
 const tremoloCents = ref(Number(readStored(STORAGE_KEYS.tremolo) ?? '9'))
 reedEngine.tremoloCents = tremoloCents.value
@@ -48,44 +51,65 @@ watch(tremoloCents, (value) => {
   writeStored(STORAGE_KEYS.tremolo, String(value))
 })
 
-function toggleBellows(): void {
-  baseBellows.value = baseBellows.value === 'push' ? 'pull' : 'push'
-}
-
 function isTypingTarget(target: EventTarget | null): boolean {
   if (!(target instanceof HTMLElement)) return false
   const tag = target.tagName
   return tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA' || target.isContentEditable
 }
 
+function midiFor(button: Button): number {
+  const base = bellows.value === 'push' ? button.pushMidiBase : button.pullMidiBase
+  return base + tuning.value.semitoneOffset
+}
+
 function onKeyDown(event: KeyboardEvent): void {
-  if (isTypingTarget(event.target)) return
+  if (isTypingTarget(event.target) || event.isComposing) return
+
   if (event.code === 'Space') {
     event.preventDefault()
-    if (!event.repeat) {
-      reedEngine.ensureStarted()
-      toggleBellows()
-    }
-  } else if (event.key === 'Shift') {
+    reedEngine.ensureStarted()
+    spaceHeld.value = true
+    return
+  }
+  if (event.key === 'Shift') {
     reedEngine.ensureStarted()
     shiftHeld.value = true
+    return
   }
+  if (event.metaKey || event.ctrlKey || event.altKey) return
+
+  const button = buttonForCode(event.code)
+  if (!button) return
+  event.preventDefault()
+  if (event.repeat) return
+  holdButton(button.id, `key:${event.code}`, midiFor(button))
 }
 
 function onKeyUp(event: KeyboardEvent): void {
-  if (event.key === 'Shift') {
-    shiftHeld.value = false
-  }
+  if (event.code === 'Space') spaceHeld.value = false
+  if (event.key === 'Shift') shiftHeld.value = false
+  const button = buttonForCode(event.code)
+  if (button) releaseButton(button.id, `key:${event.code}`)
+}
+
+function releaseHeldKeys(): void {
+  spaceHeld.value = false
+  shiftHeld.value = false
+  releaseSourcesWithPrefix('key:')
 }
 
 onMounted(() => {
   window.addEventListener('keydown', onKeyDown)
   window.addEventListener('keyup', onKeyUp)
+  window.addEventListener('blur', releaseHeldKeys)
+  void applyKeyboardLayout()
 })
 
 onBeforeUnmount(() => {
   window.removeEventListener('keydown', onKeyDown)
   window.removeEventListener('keyup', onKeyUp)
+  window.removeEventListener('blur', releaseHeldKeys)
+  releaseHeldKeys()
 })
 </script>
 
@@ -123,7 +147,7 @@ onBeforeUnmount(() => {
         >
           Zug
         </button>
-        <span class="bellows-hint">Space toggles · hold Shift for Zug</span>
+        <span class="bellows-hint">Hold Space or Shift for Zug</span>
       </div>
     </header>
 

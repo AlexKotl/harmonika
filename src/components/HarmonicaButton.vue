@@ -1,16 +1,16 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, watch } from 'vue'
 import type { Button } from '../data/layout'
 import { midiToGermanName } from '../data/notes'
 import { reedEngine } from '../audio/ReedEngine'
+import { holdButton, isButtonHeld, releaseButton } from '../input/holds'
+import { hotkeysByButtonId } from '../input/keyboardMap'
 
 const props = defineProps<{
   button: Button
   tuningOffset: number
   bellows: 'push' | 'pull'
 }>()
-
-const pointersDown = ref<Set<number>>(new Set())
 
 const pushMidi = computed(() => props.button.pushMidiBase + props.tuningOffset)
 const pullMidi = computed(() => props.button.pullMidiBase + props.tuningOffset)
@@ -23,11 +23,13 @@ const otherLabel = computed(() => midiToGermanName(otherMidi.value))
 const pushLabel = computed(() => midiToGermanName(pushMidi.value))
 const pullLabel = computed(() => midiToGermanName(pullMidi.value))
 
-const isPressed = computed(() => pointersDown.value.size > 0)
+const hotkey = computed(() => hotkeysByButtonId[props.button.id])
+const isPressed = computed(() => isButtonHeld(props.button.id))
 
-const accessibleName = computed(
-  () => `Button ${props.button.row}-${props.button.index + 1}, push ${pushLabel.value}, pull ${pullLabel.value}`,
-)
+const accessibleName = computed(() => {
+  const key = hotkey.value ? `, key ${hotkey.value.label}` : ''
+  return `Button ${props.button.row}-${props.button.index + 1}${key}, push ${pushLabel.value}, pull ${pullLabel.value}`
+})
 
 watch(activeMidi, (midi) => {
   if (isPressed.value) {
@@ -37,21 +39,12 @@ watch(activeMidi, (midi) => {
 
 function onPointerDown(event: PointerEvent): void {
   event.preventDefault()
-  reedEngine.ensureStarted()
   ;(event.currentTarget as HTMLElement).setPointerCapture(event.pointerId)
-  const wasEmpty = pointersDown.value.size === 0
-  pointersDown.value.add(event.pointerId)
-  if (wasEmpty) {
-    reedEngine.noteOn(props.button.id, activeMidi.value)
-  }
+  holdButton(props.button.id, `pointer:${event.pointerId}`, activeMidi.value)
 }
 
 function onPointerUp(event: PointerEvent): void {
-  if (!pointersDown.value.has(event.pointerId)) return
-  pointersDown.value.delete(event.pointerId)
-  if (pointersDown.value.size === 0) {
-    reedEngine.noteOff(props.button.id)
-  }
+  releaseButton(props.button.id, `pointer:${event.pointerId}`)
 }
 </script>
 
@@ -65,6 +58,7 @@ function onPointerUp(event: PointerEvent): void {
       chromatic: button.isChromatic,
     }"
     :aria-label="accessibleName"
+    :data-key="hotkey?.code"
     @pointerdown="onPointerDown"
     @pointerup="onPointerUp"
     @pointercancel="onPointerUp"
@@ -73,5 +67,6 @@ function onPointerUp(event: PointerEvent): void {
   >
     <span class="key-active">{{ activeLabel }}</span>
     <span class="key-other">{{ otherLabel }}</span>
+    <kbd v-if="hotkey" class="key-hotkey">{{ hotkey.label }}</kbd>
   </button>
 </template>

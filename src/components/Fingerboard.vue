@@ -15,9 +15,9 @@ const ROW_OFFSET: Record<Row['row'], number> = { 1: 0, 2: 0.5, 3: 1, 4: 1.5 }
 const MAX_ROW_LENGTH = Math.max(...ROWS.map((row) => row.buttons.length))
 const MAX_OFFSET = Math.max(...Object.values(ROW_OFFSET))
 
-// Columns are displayed left (innermost, row 4) to right (outermost, row 1),
-// which is how a player sees the keyboard held in front of them.
-const columns = computed<Row[]>(() => [...ROWS].sort((a, b) => b.row - a.row))
+// Left to right matches a keyboard rotated 90° clockwise, Q/A/Z nearest the
+// player: outer row (1) under the number keys, then Q, A, and Z.
+const columns = computed<Row[]>(() => [...ROWS].sort((a, b) => a.row - b.row))
 
 const boardEl = ref<HTMLElement | null>(null)
 const keySize = ref(56)
