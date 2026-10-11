@@ -11,7 +11,7 @@ import { ROWS, type Button } from '../data/layout'
  */
 const KEYS_FROM_BOTTOM: Record<Button['row'], readonly string[]> = {
   1: [
-    'Backquote',
+    // 'Backquote',
     'Digit1',
     'Digit2',
     'Digit3',
@@ -24,6 +24,7 @@ const KEYS_FROM_BOTTOM: Record<Button['row'], readonly string[]> = {
     'Digit0',
     'Minus',
     'Equal',
+    '',
   ],
   2: [
     'KeyQ',
