@@ -51,6 +51,7 @@ function onPointerUp(event: PointerEvent): void {
 <template>
   <button
     type="button"
+    tabindex="-1"
     class="key"
     :class="{
       pressed: isPressed,
@@ -59,6 +60,7 @@ function onPointerUp(event: PointerEvent): void {
     }"
     :aria-label="accessibleName"
     :data-key="hotkey?.code"
+    @mousedown.prevent
     @pointerdown="onPointerDown"
     @pointerup="onPointerUp"
     @pointercancel="onPointerUp"
