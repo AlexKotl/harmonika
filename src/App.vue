@@ -1,11 +1,19 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, defineAsyncComponent, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import Fingerboard from './components/Fingerboard.vue'
 import { DEFAULT_TUNING_ID, TUNINGS, getTuning } from './data/tunings'
 import type { Button } from './data/layout'
 import { reedEngine } from './audio/ReedEngine'
 import { applyKeyboardLayout, buttonForCode } from './input/keyboardMap'
 import { holdButton, releaseButton, releaseSourcesWithPrefix } from './input/holds'
+
+const Fingerboard3D = defineAsyncComponent(() => import('./components/Fingerboard3D.vue'))
+const is3D = ref(window.location.hash === '#/3d')
+function syncRoute() {
+  releaseHeldKeys()
+  releaseSourcesWithPrefix('pointer:')
+  is3D.value = window.location.hash === '#/3d'
+}
 
 type Bellows = 'push' | 'pull'
 
@@ -182,6 +190,7 @@ function onWindowFocus(): void {
 
 onMounted(() => {
   focusSound()
+  window.addEventListener('hashchange', syncRoute)
   window.addEventListener('keydown', onKeyDown, true)
   window.addEventListener('keyup', onKeyUp, true)
   window.addEventListener('pointerdown', onPointerDownCapture, true)
@@ -192,6 +201,7 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   cancelAnimationFrame(focusFrame)
+  window.removeEventListener('hashchange', syncRoute)
   window.removeEventListener('keydown', onKeyDown, true)
   window.removeEventListener('keyup', onKeyUp, true)
   window.removeEventListener('pointerdown', onPointerDownCapture, true)
@@ -205,6 +215,10 @@ onBeforeUnmount(() => {
   <div class="app">
     <header class="toolbar">
       <span class="brand">Steirische Harmonika</span>
+      <nav aria-label="Instrument view" class="view-nav">
+        <a href="#/" :aria-current="!is3D ? 'page' : undefined">2D</a>
+        <a href="#/3d" :aria-current="is3D ? 'page' : undefined">3D test page</a>
+      </nav>
 
       <label class="control">
         <span class="control-label">Stimmung</span>
@@ -251,7 +265,13 @@ onBeforeUnmount(() => {
     </header>
 
     <main ref="soundEl" class="stage" tabindex="-1">
-      <Fingerboard :tuning-offset="tuning.semitoneOffset" :bellows="bellows" />
+      <Fingerboard3D v-if="is3D" :tuning-offset="tuning.semitoneOffset" :bellows="bellows" />
+      <Fingerboard v-else :tuning-offset="tuning.semitoneOffset" :bellows="bellows" />
     </main>
   </div>
 </template>
+<style scoped>
+.view-nav { display: flex; gap: 12px; }
+.view-nav a { color: inherit; }
+.view-nav [aria-current] { font-weight: bold; text-decoration-thickness: 3px; }
+</style>
